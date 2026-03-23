@@ -1,0 +1,272 @@
+<mujoco model="Alicia_D_follower">
+  <!--
+    Follower arm MuJoCo model for leader-follower teleoperation.
+    Robot model matches upstream Alicia_D_v5_6_gripper_50mm.xml from
+    Synria-Robotics/Synria-Robot-Descriptions (commit 57bfabf).
+
+    Teleoperation additions (not in upstream):
+      - <option> / <default> blocks for physics tuning
+      - Table, basket, red box grasping scene
+      - Collision pads on gripper inner surfaces
+      - Position-servo actuators (pos1–pos6, pos_grip_l, pos_grip_r)
+      - Custom collision groups for gripper/box interaction
+
+    Gripper joint kinematics (verified numerically):
+      qpos = (0, 0)           → fingers at body origins, gap ≈ 51 mm  → OPEN
+      qpos = (0.025, -0.025)  → fingers moved toward centre, gap ≈ 1 mm → CLOSED
+  -->
+
+  <compiler angle="radian"
+            meshdir="."/>
+
+  <option timestep="0.002" gravity="0 0 -9.81" integrator="implicit"
+          iterations="100" noslip_iterations="20" impratio="10">
+    <flag contact="enable"/>
+  </option>
+
+  <default>
+    <joint damping="1.0" armature="0.02"/>
+    <position kp="200"/>
+    <geom condim="4" friction="1.0 0.005 0.0001"/>
+  </default>
+
+  <asset>
+    <mesh name="base_link"           file="base_link.STL"/>
+    <mesh name="link1"               file="link1.STL"/>
+    <mesh name="link2"               content_type="model/stl" file="link2.STL"/>
+    <mesh name="link3"               content_type="model/stl" file="link3.STL"/>
+    <mesh name="link4"               content_type="model/stl" file="link4.STL"/>
+    <mesh name="link5"               file="link5.STL"/>
+    <mesh name="link6"               content_type="model/stl" file="link6.STL"/>
+    <mesh name="left_gripper_50mm"   content_type="model/stl" file="left_gripper_50mm.STL"/>
+    <mesh name="right_gripper_50mm"  content_type="model/stl" file="right_gripper_50mm.STL"/>
+
+    <texture type="2d" name="grid" builtin="checker" width="512" height="512"
+             rgb1="0.15 0.20 0.25" rgb2="0.25 0.30 0.35"/>
+    <material name="grid" texture="grid" texrepeat="8 8" reflectance="0.15"/>
+  </asset>
+
+  <worldbody>
+    <!-- ground + lights -->
+    <geom type="plane" size="1 1 0.01" material="grid" condim="4"
+          friction="1.5 0.02 0.002"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          contype="5" conaffinity="5"/>
+    <light pos="0 -0.6 1.2" dir="0 0.5 -0.8" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3"/>
+    <light pos="0.6  0.6 1.5" dir="-0.4 -0.4 -1" diffuse="0.5 0.5 0.5"/>
+
+    <!-- ===== small table for grasping scene ===== -->
+    <body name="table" pos="-0.25 0 0">
+      <geom name="table_top" type="box" pos="0 0 0.04" size="0.14 0.20 0.01"
+            rgba="0.60 0.45 0.30 1"
+            friction="2.0 0.03 0.003"
+            solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+            condim="4" contype="5" conaffinity="5"/>
+      <geom name="table_leg_fl" type="box" pos="0.11 0.17 0.02" size="0.012 0.012 0.02"
+            rgba="0.45 0.32 0.22 1" friction="1.5 0.02 0.002"
+            solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+            contype="5" conaffinity="5"/>
+      <geom name="table_leg_fr" type="box" pos="0.11 -0.17 0.02" size="0.012 0.012 0.02"
+            rgba="0.45 0.32 0.22 1" friction="1.5 0.02 0.002"
+            solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+            contype="5" conaffinity="5"/>
+      <geom name="table_leg_rl" type="box" pos="-0.11 0.17 0.02" size="0.012 0.012 0.02"
+            rgba="0.45 0.32 0.22 1" friction="1.5 0.02 0.002"
+            solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+            contype="5" conaffinity="5"/>
+      <geom name="table_leg_rr" type="box" pos="-0.11 -0.17 0.02" size="0.012 0.012 0.02"
+            rgba="0.45 0.32 0.22 1" friction="1.5 0.02 0.002"
+            solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+            contype="5" conaffinity="5"/>
+
+      <!-- fixed wastebasket on the right side of the tabletop -->
+      <body name="basket" pos="0.03 -0.12 0.05">
+        <geom name="basket_bottom" type="box" pos="0 0 0.0035" size="0.028 0.020 0.0035"
+          rgba="0.18 0.20 0.23 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_left_lower" type="box" pos="0 0.018 0.018" size="0.029 0.003 0.014"
+          rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_right_lower" type="box" pos="0 -0.018 0.018" size="0.029 0.003 0.014"
+          rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_front_lower" type="box" pos="0.025 0 0.018" size="0.003 0.015 0.014"
+          rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_back_lower" type="box" pos="-0.025 0 0.018" size="0.003 0.015 0.014"
+          rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_left_upper" type="box" pos="0 0.0205 0.038" size="0.033 0.003 0.010"
+          rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_right_upper" type="box" pos="0 -0.0205 0.038" size="0.033 0.003 0.010"
+          rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_front_upper" type="box" pos="0.029 0 0.038" size="0.003 0.0175 0.010"
+          rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+        <geom name="basket_wall_back_upper" type="box" pos="-0.029 0 0.038" size="0.003 0.0175 0.010"
+          rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
+          solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
+          condim="4" contype="5" conaffinity="5"/>
+
+        <!-- visual accents only -->
+        <geom name="basket_inner_floor" type="box" pos="0 0 0.0076" size="0.023 0.015 0.0012"
+          rgba="0.56 0.60 0.66 1" contype="0" conaffinity="0"/>
+        <geom name="basket_liner" type="box" pos="0 0 0.026" size="0.021 0.013 0.013"
+          rgba="0.72 0.76 0.80 0.16" contype="0" conaffinity="0"/>
+        <geom name="basket_rim_left" type="box" pos="0 0.0208 0.0485" size="0.034 0.0012 0.0015"
+          rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
+        <geom name="basket_rim_right" type="box" pos="0 -0.0208 0.0485" size="0.034 0.0012 0.0015"
+          rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
+        <geom name="basket_rim_front" type="box" pos="0.0292 0 0.0485" size="0.0012 0.018 0.0015"
+          rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
+        <geom name="basket_rim_back" type="box" pos="-0.0292 0 0.0485" size="0.0012 0.018 0.0015"
+          rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
+      </body>
+    </body>
+
+    <!-- ===== graspable red box (20 mm cube) placed on table ===== -->
+    <body name="box" pos="-0.25 0 0.061">
+      <freejoint name="box_free"/>
+      <inertial pos="0 0 0" mass="0.03" diaginertia="2.0e-6 2.0e-6 2.0e-6"/>
+      <geom name="box_geom" type="box" size="0.010 0.010 0.010"
+            rgba="0.9 0.2 0.2 1"
+            friction="5.0 0.04 0.004"
+            solref="0.003 1" solimp="0.98 0.999 0.0005 0.5 2"
+            condim="4" contype="1" conaffinity="11"/>
+    </body>
+
+    <!-- ===== robot arm (matches upstream Alicia_D_v5_6_gripper_50mm.xml) ===== -->
+    <body name="base_link" pos="0 0 0" quat="0 0 0 1">
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="base_link"/>
+      <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="base_link"/>
+
+      <body name="link1" pos="0 0 0.1295">
+        <inertial pos="0.000230596 1.29045e-05 0.00303136" quat="0.501534 0.502707 -0.494443 0.501274"
+                  mass="0.195233" diaginertia="0.000339803 0.000258352 0.000149295"/>
+        <joint name="Joint1" pos="0 0 0" axis="0 0 1" range="-2.749 2.749" />
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link1"/>
+        <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link1"/>
+
+        <body name="link2" pos="0 0 0.04287" quat="0.499998 0.5 0.5 -0.500002">
+          <inertial pos="-0.150589 0.000866069 -0.000650951" quat="0.680967 0.18776 0.185184 0.683182"
+                    mass="0.207034" diaginertia="0.00020571 0.000131041 0.000119814"/>
+          <joint name="Joint2" pos="0 0 0" axis="0 0 1" range="-2 2" />
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link2"/>
+          <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link2"/>
+
+          <body name="link3" pos="-0.22367 0.022492 -5e-05" quat="0.382681 0 0 0.923881">
+            <inertial pos="0.00248144 -0.0557863 0.000269721" quat="0.505129 0.478686 -0.468559 0.544203"
+                      mass="0.0845576" diaginertia="8.09971e-05 7.62965e-05 2.81294e-05"/>
+            <joint name="Joint3" pos="0 0 0" axis="0 0 1" range="-0.5 3.14159" />
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link3"/>
+            <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link3"/>
+
+            <body name="link4" pos="-0.00211 -0.099 0.0002" quat="-2.59734e-06 2.59735e-06 0.707108 -0.707105">
+              <inertial pos="0.000298365 -0.000601369 0.065974" quat="0.99997 0.000404214 0.00701296 -0.00329826"
+                        mass="0.0653696" diaginertia="7.0311e-05 6.8747e-05 1.68121e-05"/>
+              <joint name="Joint4" pos="0 0 0" axis="0 0 -1" range="-2.79 2.79" />
+              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link4"/>
+              <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link4"/>
+
+              <body name="link5" pos="0 -0.0005 0.12235" quat="0.707105 -0.707108 0 0">
+                <inertial pos="-0.0113684 -0.0308687 0.00087045" quat="0.600148 -0.0147585 -0.0142327 0.799626"
+                          mass="0.0507639" diaginertia="2.56871e-05 1.81869e-05 1.72553e-05"/>
+                <joint name="Joint5" pos="0 0 0" axis="0 0 -1" range="-1.57 1.57" />
+                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link5"/>
+                <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link5"/>
+
+                <body name="link6" pos="-0.00385 -0.0575 0.001" quat="0.707105 -0.707108 0 0">
+                  <inertial pos="-0.0274898 1.78816e-05 -0.0342551" quat="0.587235 0.586837 -0.394197 0.394189"
+                            mass="0.130365" diaginertia="8.46616e-05 7.44396e-05 3.53175e-05"/>
+                  <joint name="Joint6" pos="0 0 0" axis="0 0 1" range="-3.14159 3.14159" />
+                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link6"/>
+                  <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link6"/>
+
+                  <site name="end_effector" pos="0.0002 0 -0.13098" size="0.008" rgba="0 1 0 0"/>
+
+                  <!-- ===== LEFT GRIPPER ===== -->
+                  <body name="left_gripper" pos="0.0002 0.0255 -0.13098" quat="0 0 0.707107 -0.707107">
+                    <inertial pos="2.97088e-08 -0.0434088 -0.0106559" quat="0.402878 0.581113 -0.581114 0.402868"
+                              mass="0.0256461" diaginertia="8.50964e-06 6.4683e-06 4.66071e-06"/>
+                    <joint name="left_finger" pos="0 0 0" axis="0 0 1" type="slide"
+                           range="0 0.025" damping="8.0" armature="0.05" />
+                    <!-- visual geom (group 1) -->
+                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
+                         rgba="0.15 0.15 0.15 1" mesh="left_gripper_50mm"/>
+                    <!-- gripper shell: collides with ground/table and directly grasps the box -->
+                    <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="left_gripper_50mm"
+                      contype="4" conaffinity="5"
+                      friction="4.5 0.04 0.004"
+                      solref="0.0025 1" solimp="0.98 0.999 0.0005 0.5 2"
+                         condim="4"/>
+                  </body>
+
+                  <!-- ===== RIGHT GRIPPER ===== -->
+                  <body name="right_gripper" pos="0.0002 -0.0255 -0.13098" quat="0.707105 0.707108 0 0">
+                    <inertial pos="2.97088e-08 0.0434088 0.0106559" quat="0.402868 0.581114 -0.581113 0.402878"
+                              mass="0.0256461" diaginertia="8.50965e-06 6.4683e-06 4.66071e-06"/>
+                    <joint name="right_finger" pos="0 0 0" axis="0 0 1" type="slide"
+                           range="-0.025 0" damping="8.0" armature="0.05" />
+                    <!-- visual geom (group 1) -->
+                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
+                         rgba="0.15 0.15 0.15 1" mesh="right_gripper_50mm"/>
+                    <!-- gripper shell: collides with ground/table and directly grasps the box -->
+                    <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="right_gripper_50mm"
+                      contype="4" conaffinity="5"
+                      friction="4.5 0.04 0.004"
+                      solref="0.0025 1" solimp="0.98 0.999 0.0005 0.5 2"
+                         condim="4"/>
+                  </body>
+                  <!-- ===== TOOL0 (end-effector reference) ===== -->
+                  <body name="tool0" pos="0 0 -0.13">
+                    <inertial pos="0 0 0" quat="1 0 0 0" mass="0.001" diaginertia="1e-08 1e-08 1e-08"/>
+                    <geom type="sphere" size="0.01" contype="0" conaffinity="0" group="1" density="0" rgba="0 1 0 0"/>
+                    <site name="tool0_site" pos="0 0 0" size="0.01" type="sphere" rgba="0 1 0 0"/>
+                  </body>
+
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- Position servo actuators -->
+  <actuator>
+    <!-- 6 arm joints -->
+    <position name="pos1" joint="Joint1" kp="800" kv="40"/>
+    <position name="pos2" joint="Joint2" kp="800" kv="40"/>
+    <position name="pos3" joint="Joint3" kp="800" kv="40"/>
+    <position name="pos4" joint="Joint4" kp="400" kv="20"/>
+    <position name="pos5" joint="Joint5" kp="300" kv="15"/>
+    <position name="pos6" joint="Joint6" kp="300" kv="15"/>
+    <!-- gripper fingers (physics-based: contact forces prevent penetration) -->
+    <position name="pos_grip_l" joint="left_finger"   kp="200" kv="10"/>
+    <position name="pos_grip_r" joint="right_finger"   kp="200" kv="10"/>
+  </actuator>
+
+  <contact>
+    <!-- adjacent link self-collision exclusions (matches upstream) -->
+    <exclude body1="base_link" body2="link1"/>
+    <exclude body1="link1" body2="link2"/>
+    <exclude body1="link2" body2="link3"/>
+    <exclude body1="link3" body2="link4"/>
+    <exclude body1="link4" body2="link5"/>
+    <exclude body1="link5" body2="link6"/>
+    <exclude body1="link6" body2="left_gripper"/>
+    <!-- fingers can close fully when empty -->
+    <exclude body1="left_gripper" body2="right_gripper"/>
+  </contact>
+</mujoco>

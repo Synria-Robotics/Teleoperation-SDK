@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Demo 01",
+      "type": "shell",
+      "command": "/home/ubuntu22/miniconda3/bin/python",
+      "args": [
+        "${workspaceFolder}/01_demo_realtime_joint_plot.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Demo 02",
+      "type": "shell",
+      "command": "/home/ubuntu22/miniconda3/bin/python",
+      "args": [
+        "${workspaceFolder}/02_demo_mujoco_follower.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

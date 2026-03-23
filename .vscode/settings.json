@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "/home/ubuntu22/miniconda3/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}"
+  ]
+}

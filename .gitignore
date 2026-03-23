@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.so
+
+.venv/
+.env
+.python-version
+
+logs/*
+!logs/.gitkeep
+
+.vscode/*.code-workspace
