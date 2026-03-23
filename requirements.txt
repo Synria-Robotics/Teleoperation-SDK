@@ -4,5 +4,5 @@
 
 numpy
 matplotlib          # demo 01
-mujoco>=3.0         # demo 02
+mujoco>=3.50         # demo 02
 pyserial            # serial communication (alicia_d_sdk dependency)

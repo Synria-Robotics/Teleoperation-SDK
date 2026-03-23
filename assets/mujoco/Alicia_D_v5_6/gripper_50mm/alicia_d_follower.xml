@@ -148,49 +148,49 @@
     <!-- ===== robot arm (matches upstream Alicia_D_v5_6_gripper_50mm.xml) ===== -->
     <body name="base_link" pos="0 0 0" quat="0 0 0 1">
       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="base_link"/>
-      <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="base_link"/>
+      <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="base_link"/>
 
       <body name="link1" pos="0 0 0.1295">
         <inertial pos="0.000230596 1.29045e-05 0.00303136" quat="0.501534 0.502707 -0.494443 0.501274"
                   mass="0.195233" diaginertia="0.000339803 0.000258352 0.000149295"/>
         <joint name="Joint1" pos="0 0 0" axis="0 0 1" range="-2.749 2.749" />
         <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link1"/>
-        <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link1"/>
+        <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="link1"/>
 
         <body name="link2" pos="0 0 0.04287" quat="0.499998 0.5 0.5 -0.500002">
           <inertial pos="-0.150589 0.000866069 -0.000650951" quat="0.680967 0.18776 0.185184 0.683182"
                     mass="0.207034" diaginertia="0.00020571 0.000131041 0.000119814"/>
           <joint name="Joint2" pos="0 0 0" axis="0 0 1" range="-2 2" />
           <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link2"/>
-          <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link2"/>
+          <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="link2"/>
 
           <body name="link3" pos="-0.22367 0.022492 -5e-05" quat="0.382681 0 0 0.923881">
             <inertial pos="0.00248144 -0.0557863 0.000269721" quat="0.505129 0.478686 -0.468559 0.544203"
                       mass="0.0845576" diaginertia="8.09971e-05 7.62965e-05 2.81294e-05"/>
             <joint name="Joint3" pos="0 0 0" axis="0 0 1" range="-0.5 3.14159" />
             <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link3"/>
-            <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link3"/>
+            <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="link3"/>
 
             <body name="link4" pos="-0.00211 -0.099 0.0002" quat="-2.59734e-06 2.59735e-06 0.707108 -0.707105">
               <inertial pos="0.000298365 -0.000601369 0.065974" quat="0.99997 0.000404214 0.00701296 -0.00329826"
                         mass="0.0653696" diaginertia="7.0311e-05 6.8747e-05 1.68121e-05"/>
               <joint name="Joint4" pos="0 0 0" axis="0 0 -1" range="-2.79 2.79" />
               <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link4"/>
-              <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link4"/>
+              <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="link4"/>
 
               <body name="link5" pos="0 -0.0005 0.12235" quat="0.707105 -0.707108 0 0">
                 <inertial pos="-0.0113684 -0.0308687 0.00087045" quat="0.600148 -0.0147585 -0.0142327 0.799626"
                           mass="0.0507639" diaginertia="2.56871e-05 1.81869e-05 1.72553e-05"/>
                 <joint name="Joint5" pos="0 0 0" axis="0 0 -1" range="-1.57 1.57" />
                 <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link5"/>
-                <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link5"/>
+                <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="link5"/>
 
                 <body name="link6" pos="-0.00385 -0.0575 0.001" quat="0.707105 -0.707108 0 0">
                   <inertial pos="-0.0274898 1.78816e-05 -0.0342551" quat="0.587235 0.586837 -0.394197 0.394189"
                             mass="0.130365" diaginertia="8.46616e-05 7.44396e-05 3.53175e-05"/>
                   <joint name="Joint6" pos="0 0 0" axis="0 0 1" range="-3.14159 3.14159" />
                   <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1" mesh="link6"/>
-                  <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="link6"/>
+                  <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="link6"/>
 
                   <site name="end_effector" pos="0.0002 0 -0.13098" size="0.008" rgba="0 1 0 0"/>
 
@@ -204,7 +204,7 @@
                     <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                          rgba="0.15 0.15 0.15 1" mesh="left_gripper_50mm"/>
                     <!-- gripper shell: collides with ground/table and directly grasps the box -->
-                    <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="left_gripper_50mm"
+                    <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="left_gripper_50mm"
                       contype="4" conaffinity="5"
                       friction="4.5 0.04 0.004"
                       solref="0.0025 1" solimp="0.98 0.999 0.0005 0.5 2"
@@ -221,7 +221,7 @@
                     <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                          rgba="0.15 0.15 0.15 1" mesh="right_gripper_50mm"/>
                     <!-- gripper shell: collides with ground/table and directly grasps the box -->
-                    <geom type="mesh" rgba="0.15 0.15 0.15 1" mesh="right_gripper_50mm"
+                    <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="right_gripper_50mm"
                       contype="4" conaffinity="5"
                       friction="4.5 0.04 0.004"
                       solref="0.0025 1" solimp="0.98 0.999 0.0005 0.5 2"
