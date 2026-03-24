@@ -3,5 +3,17 @@
   "python.terminal.activateEnvironment": true,
   "python.analysis.extraPaths": [
     "${workspaceFolder}"
+  ],
+  "python-envs.pythonProjects": [
+    {
+      "path": "02_demo_mujoco_follower.py",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    },
+    {
+      "path": "03_demo_alicia_follower.py",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
   ]
 }

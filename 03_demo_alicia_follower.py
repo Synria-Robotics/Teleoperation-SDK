@@ -65,6 +65,9 @@ WRIST_CAMERA_WINDOW = "Wrist Camera (Intel RealSense-style RGB)"
 DEFAULT_WRIST_WIDTH = 848
 DEFAULT_WRIST_HEIGHT = 480
 DEFAULT_WRIST_FPS = 30.0
+WRIST_WINDOW_X = 40
+WRIST_WINDOW_Y = 40
+WRIST_DEBUG_FRAME = PROJECT_ROOT / "logs" / "wrist_camera_debug.png"
 
 # Default MuJoCo XML path (from user-provided XML)
 
@@ -220,8 +223,67 @@ def open_wrist_camera_window(width: int, height: int):
     if cv2 is None:
         return
 
-    cv2.namedWindow(WRIST_CAMERA_WINDOW, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WRIST_CAMERA_WINDOW, width, height)
+    cv2.startWindowThread()
+    cv2.namedWindow(WRIST_CAMERA_WINDOW, cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_NORMAL)
+    cv2.resizeWindow(WRIST_CAMERA_WINDOW, height, width)  # swapped: camera rotated 90° CW
+    cv2.moveWindow(WRIST_CAMERA_WINDOW, WRIST_WINDOW_X, WRIST_WINDOW_Y)
+
+    topmost_prop = getattr(cv2, "WND_PROP_TOPMOST", None)
+    if topmost_prop is not None:
+        try:
+            cv2.setWindowProperty(WRIST_CAMERA_WINDOW, topmost_prop, 1)
+        except cv2.error:
+            pass
+
+
+def show_wrist_camera_placeholder(width: int, height: int, message: str):
+    """Render a visible placeholder frame so the preview window is easy to find."""
+    if cv2 is None:
+        return
+
+    # Swap dimensions to match 90° CW rotation of the camera
+    frame = np.zeros((width, height, 3), dtype=np.uint8)
+    frame[:] = (28, 28, 28)
+    cv2.rectangle(frame, (0, 0), (height - 1, width - 1), (0, 210, 255), 6)
+    cv2.putText(
+        frame,
+        "Wrist Camera Preview",
+        (24, 54),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1.0,
+        (255, 255, 255),
+        2,
+        cv2.LINE_AA,
+    )
+    cv2.putText(
+        frame,
+        message,
+        (24, 96),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        (0, 210, 255),
+        2,
+        cv2.LINE_AA,
+    )
+    cv2.putText(
+        frame,
+        f"If hidden, look near the top-left corner at ({WRIST_WINDOW_X}, {WRIST_WINDOW_Y})",
+        (24, 134),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.55,
+        (220, 220, 220),
+        1,
+        cv2.LINE_AA,
+    )
+
+    cv2.imshow(WRIST_CAMERA_WINDOW, frame)
+    cv2.waitKey(1)
+
+
+def save_wrist_camera_debug_frame(frame_bgr):
+    """Save the latest wrist frame to disk for debugging window issues."""
+    WRIST_DEBUG_FRAME.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(WRIST_DEBUG_FRAME), frame_bgr)
 
 
 def close_wrist_camera_window():
@@ -246,14 +308,20 @@ def render_wrist_camera_frame(renderer, data, width: int, height: int, enabled: 
         enabled: Whether teleoperation is currently active.
 
     Returns:
-        bool: ``True`` if the preview window remains visible.
+        tuple[bool, bool]: Window-visible flag and whether this frame looks non-empty.
     """
     if renderer is None or cv2 is None:
-        return False
+        return False, False
 
     renderer.update_scene(data, camera=WRIST_CAMERA_NAME)
     frame_rgb = renderer.render()
     frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+
+    # Rotate 90° clockwise – physical camera is mounted sideways
+    frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_CLOCKWISE)
+    rot_h, rot_w = frame_bgr.shape[:2]
+
+    frame_is_nonempty = bool(np.max(frame_bgr) > 0)
 
     status_text = "TELEOP ACTIVE" if enabled else "TELEOP HOLD"
     cv2.putText(
@@ -276,14 +344,15 @@ def render_wrist_camera_frame(renderer, data, width: int, height: int, enabled: 
         2,
         cv2.LINE_AA,
     )
+    cv2.rectangle(frame_bgr, (0, 0), (rot_w - 1, rot_h - 1), (0, 210, 255), 4)
 
     cv2.imshow(WRIST_CAMERA_WINDOW, frame_bgr)
     cv2.waitKey(1)
 
     try:
-        return cv2.getWindowProperty(WRIST_CAMERA_WINDOW, cv2.WND_PROP_VISIBLE) >= 1
+        return cv2.getWindowProperty(WRIST_CAMERA_WINDOW, cv2.WND_PROP_VISIBLE) >= 1, frame_is_nonempty
     except cv2.error:
-        return False
+        return False, frame_is_nonempty
 
 
 # ──────────────────── shared state container ──────────────────
@@ -543,13 +612,21 @@ def main(args):
         wrist_window_closed_notice = False
         wrist_render_interval = 1.0 / max(args.wrist_fps, 1.0)
         last_wrist_render_time = 0.0
+        wrist_first_frame_saved = False
+        wrist_nonempty_frame_seen = False
 
         if wrist_window_visible:
             open_wrist_camera_window(args.wrist_width, args.wrist_height)
+            show_wrist_camera_placeholder(
+                args.wrist_width,
+                args.wrist_height,
+                "Initializing MuJoCo wrist camera...",
+            )
             print(
                 f"[OK] Wrist camera preview opened – "
                 f"{args.wrist_width}x{args.wrist_height} @ {args.wrist_fps:.0f} Hz"
             )
+            print(f"[INFO] Wrist preview window moved to ({WRIST_WINDOW_X}, {WRIST_WINDOW_Y})")
 
         def key_callback(keycode):
             """Handle MuJoCo viewer keyboard shortcuts.
@@ -598,6 +675,11 @@ def main(args):
                         wrist_window_closed_notice = False
                         if wrist_window_visible:
                             open_wrist_camera_window(args.wrist_width, args.wrist_height)
+                            show_wrist_camera_placeholder(
+                                args.wrist_width,
+                                args.wrist_height,
+                                "Wrist camera preview resumed",
+                            )
                             print("[INFO] Wrist camera preview enabled")
                         else:
                             close_wrist_camera_window()
@@ -641,13 +723,24 @@ def main(args):
                 if wrist_renderer is not None and wrist_window_visible:
                     now = time.perf_counter()
                     if now - last_wrist_render_time >= wrist_render_interval:
-                        wrist_window_visible = render_wrist_camera_frame(
+                        wrist_window_visible, frame_is_nonempty = render_wrist_camera_frame(
                             wrist_renderer,
                             data,
                             width=args.wrist_width,
                             height=args.wrist_height,
                             enabled=enabled,
                         )
+                        wrist_nonempty_frame_seen = wrist_nonempty_frame_seen or frame_is_nonempty
+                        if not wrist_first_frame_saved:
+                            wrist_renderer.update_scene(data, camera=WRIST_CAMERA_NAME)
+                            debug_frame_rgb = wrist_renderer.render()
+                            debug_frame_bgr = cv2.cvtColor(debug_frame_rgb, cv2.COLOR_RGB2BGR)
+                            save_wrist_camera_debug_frame(debug_frame_bgr)
+                            wrist_first_frame_saved = True
+                            print(f"[INFO] Wrist debug frame saved to {WRIST_DEBUG_FRAME}")
+                        if not wrist_nonempty_frame_seen and wrist_first_frame_saved:
+                            print("[WARN] Wrist camera is rendering, but the image is still fully black")
+                            wrist_nonempty_frame_seen = True
                         last_wrist_render_time = now
                         if not wrist_window_visible and not wrist_window_closed_notice:
                             print("[INFO] Wrist camera window closed – press V to reopen")
