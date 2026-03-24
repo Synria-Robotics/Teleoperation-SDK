@@ -272,7 +272,7 @@
                         rgba="0 1 1 0"/>
                     </body>
                     <body name="tool0_markers">
-                      <geom name="marker_z_neg" type="sphere" pos="0 0 -0.01" size="0.005"
+                      <geom name="marker_z_pos" type="sphere" pos="0 0 0.01" size="0.005"
                         contype="0" conaffinity="0" group="1" density="0"
                         rgba="1 1 0 1"/>
                     </body>
