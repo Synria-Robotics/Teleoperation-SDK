@@ -26,19 +26,6 @@
       },
       "group": "build",
       "problemMatcher": []
-    },
-    {
-      "label": "Run Demo 03",
-      "type": "shell",
-      "command": "/home/ubuntu22/miniconda3/bin/python",
-      "args": [
-        "${workspaceFolder}/03_demo_alicia_follower.py"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "group": "build",
-      "problemMatcher": []
     }
   ]
 }
