@@ -27,7 +27,7 @@ Teleoperation-SDK/
 ├── utils/
 │   ├── __init__.py
 │   └── fps_utils.py                     # precise_sleep 高精度定时
-├── requirements.txt
+├── pyproject.toml
 ├── .gitignore
 └── README.md
 ```
@@ -47,16 +47,11 @@ Teleoperation-SDK/
 
 ## 2. 环境配置（从零开始）
 
-### 2.1 安装 Miniconda
+### 2.1 安装 Conda（Miniconda）
 
 > 如已安装 Conda，跳到 2.2。
 
-```bash
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
-```
-
-按提示完成安装，安装完成后 **重启终端** 使 `conda` 命令生效。
+请按官方文档完成安装与验证：[Conda 环境管理 | Synria Robotics 文档中心](https://docs.sparklingrobo.com/info/development/conda-installation)。安装完成后 **重启终端**（或按文档配置 PATH），确保 `conda --version` 可用。
 
 ### 2.2 创建并激活 Python 环境
 
@@ -67,34 +62,14 @@ conda activate teleop
 
 > 后续所有命令均在 `teleop` 环境中执行。
 
-### 2.3 安装 PyTorch
-
-PyTorch 是间接依赖（`alicia_d_sdk` → `synria-robocore` 在 import 时强制加载 `torch`）。
-根据你的硬件选择 **其中一条** 命令：
-
-```bash
-# 有 NVIDIA GPU（CUDA 12.x）
-pip install torch --index-url https://download.pytorch.org/whl/cu128
-
-# 无 GPU / 纯 CPU
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-```
-
-### 2.4 安装 Alicia-D SDK
-
-```bash
-# 将路径替换为你本地 Alicia-D-SDK 源码目录
-pip install -e /path/to/Alicia-D-SDK
-```
-
-### 2.5 安装 Teleoperation-SDK 依赖
+### 2.3 安装依赖
 
 ```bash
 cd /path/to/Teleoperation-SDK
-pip install -r requirements.txt
+pip install .
 ```
 
-### 2.6 验证安装
+### 2.4 验证安装
 
 ```bash
 python -c "
@@ -112,7 +87,7 @@ print('All dependencies installed successfully!')
 
 所有行均无报错即配置完成。
 
-### 2.7 串口权限（首次需要）
+### 2.5 串口权限（首次需要）
 
 ```bash
 sudo usermod -aG dialout $USER
@@ -200,11 +175,11 @@ python 02_demo_mujoco_follower.py --xml /path/to/custom_model.xml
 
 | 报错信息 | 原因 | 解决方法 |
 |----------|------|----------|
-| `ImportError: torch_utils 需要 PyTorch` | 未安装 torch | 见 [2.3 安装 PyTorch](#23-安装-pytorch) |
+| `ImportError: torch_utils 需要 PyTorch` | 未安装 torch | 在仓库目录执行 `pip install .`（或 `pip install -e .`） |
 | `ModuleNotFoundError: No module named 'torch'` | 同上 | 同上 |
-| `ModuleNotFoundError: No module named 'mujoco'` | 未安装 mujoco | `pip install mujoco` |
-| `ModuleNotFoundError: No module named 'alicia_d_sdk'` | SDK 未安装 | 见 [2.4 安装 Alicia-D SDK](#24-安装-alicia-d-sdk) |
-| `Permission denied: '/dev/ttyACM0'` | 串口权限不足 | 见 [2.7 串口权限](#27-串口权限首次需要) |
+| `ModuleNotFoundError: No module named 'mujoco'` | 未安装 mujoco | 同上 |
+| `ModuleNotFoundError: No module named 'alicia_d_sdk'` | SDK 未安装 | 同上 |
+| `Permission denied: '/dev/ttyACM0'` | 串口权限不足 | 见 [2.5 串口权限](#25-串口权限首次需要) |
 | `device disconnected or multiple access on port` | 机械臂未连接 / 串口被占用 | 检查 USB 连接，确认无其他程序占用串口 |
 
 ### 其他问题

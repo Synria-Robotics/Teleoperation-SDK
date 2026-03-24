@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teleoperation-sdk"
+version = "0.1.0"
+description = "Alicia-D 遥操作示例：实时关节绘图与 MuJoCo Follower 仿真"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "alicia-d-sdk",
+    "mujoco>=3.5.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["utils*"]

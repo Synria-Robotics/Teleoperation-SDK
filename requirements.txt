@@ -1,8 +1,0 @@
-# Teleoperation-SDK dependencies
-# alicia_d_sdk: install from local source
-#   pip install -e /home/ubuntu22/Alicia-D-SDK
-
-numpy
-matplotlib          # demo 01
-mujoco>=3.50         # demo 02
-pyserial            # serial communication (alicia_d_sdk dependency)
