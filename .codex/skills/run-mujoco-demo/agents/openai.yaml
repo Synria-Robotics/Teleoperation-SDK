@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run MuJoCo Demo"
+  short_description: "Launch Teleoperation-SDK MuJoCo demo safely"
+  default_prompt: "Use $run-mujoco-demo to start or troubleshoot the Teleoperation-SDK MuJoCo follower demo in this repository."
