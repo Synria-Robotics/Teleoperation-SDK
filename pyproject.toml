@@ -11,8 +11,10 @@ requires-python = ">=3.10"
 dependencies = [
     "alicia-d-sdk",
     "mujoco>=3.5.0",
+    "numpy",
+    "torch",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["utils*"]
+include = ["utils*", "teleop_sdk*"]

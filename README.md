@@ -1,11 +1,12 @@
 # Teleoperation-SDK
 
-Alicia-D 机械臂遥操作独立工具包。提供两个即用示例：
+Alicia-D 机械臂遥操作独立工具包。当前包含：
 
 | Demo | 功能 |
 |------|------|
 | **Demo 01** — `01_demo_realtime_joint_plot.py` | 实时关节角度绘图 + 手柄输入状态面板 |
 | **Demo 02** — `02_demo_mujoco_follower.py` | Leader → MuJoCo Follower 遥操作仿真 |
+| **Residual RL** — `record_teleop.py` / `train_residual_td3_teleop.py` / `eval_residual_td3_teleop.py` | 基于 teleoperation 的 MuJoCo shared-control 数据采集、训练与评估 |
 
 ---
 
@@ -15,6 +16,9 @@ Alicia-D 机械臂遥操作独立工具包。提供两个即用示例：
 Teleoperation-SDK/
 ├── 01_demo_realtime_joint_plot.py       # Demo 01：实时关节监控
 ├── 02_demo_mujoco_follower.py           # Demo 02：MuJoCo 遥操作
+├── record_teleop.py                     # 采集 teleop 数据集
+├── train_residual_td3_teleop.py         # 训练 residual TD3 copilot
+├── eval_residual_td3_teleop.py          # 评估训练好的 residual policy
 ├── assets/
 │   └── mujoco/
 │       └── Alicia_D_v5_6/
@@ -24,6 +28,12 @@ Teleoperation-SDK/
 │               ├── link1.STL ~ link6.STL
 │               ├── left_gripper_50mm.STL
 │               └── right_gripper_50mm.STL
+├── teleop_sdk/
+│   ├── data/                            # rollout 数据结构与 .npz I/O
+│   ├── envs/                            # MuJoCo pick-place teleop 环境
+│   ├── providers/                       # human / residual action providers
+│   ├── rewards/                         # task reward + anti-conflict shaping
+│   └── runners/                         # shared-control rollout driver
 ├── utils/
 │   ├── __init__.py
 │   └── fps_utils.py                     # precise_sleep 高精度定时
@@ -166,6 +176,94 @@ python 02_demo_mujoco_follower.py --disable_torque --debug
 # 使用自定义 XML 模型
 python 02_demo_mujoco_follower.py --xml /path/to/custom_model.xml
 ```
+
+### Teleoperation Residual RL（MuJoCo 第一阶段）
+
+这部分不是用 BC policy 当 base，而是围绕 `human teleop + residual copilot` 设计：
+
+```text
+commanded_action = base_action + alpha * residual_action
+```
+
+环境是仓库内新增的 `teleop_sdk.envs.MujocoPickPlaceTeleopEnv`，第一版任务为单臂 pick-place，状态里显式包含：
+
+- robot proprioception
+- end-effector pose
+- box / basket pose
+
+这里建议直接采用 ResFiT 风格的数据语义：
+
+- `observation.state` / `observation_state`：低维状态向量
+- `base_action`：唯一的基础动作语义。对 teleop 来说，它就是人类当前输入，不再单独并列保留一个 `human_action`
+- `residual_action`：copilot 输出
+- `commanded_action`：`base_action + alpha * residual_action`
+- `realized_action`：控制器和仿真真正执行出来的动作，用于分析 tracking gap
+
+#### 1. 采集纯 teleop 数据
+
+```bash
+python record_teleop.py --output_dir logs/teleop_dataset
+```
+
+每个 episode 会保存成一个 `episode_XXXX.npz`，字段包括：
+
+- `observation_state`
+- `base_action`
+- `next_base_action`
+- `residual_action`
+- `commanded_action`
+- `realized_action`
+- `reward_env`
+- `reward_total`
+- `conflict_score`
+
+兼容旧 reader 时，文件里仍会额外保存 `obs_flat / human_action / exec_action` 这些 legacy alias，但训练和后续扩展都应以新字段为准。
+
+#### 2. 训练 residual TD3
+
+```bash
+python train_residual_td3_teleop.py \
+  --dataset_dir logs/teleop_dataset \
+  --save_path logs/residual_td3_teleop.pt
+```
+
+训练流程固定为：
+
+1. 用 offline teleop dataset 预热 critic
+2. 收集 human-only baseline episodes（`delta = 0`）
+3. 用 playback 的 teleop action 在 MuJoCo 中收集 assisted rollout
+4. 混合 offline + online buffer 做 off-policy residual TD3 更新
+
+目前实现里，critic 当前步和 target 步都已经对齐到 `commanded_action` 语义，这一点和 ResFiT 的核心约束一致，不能再混用 `realized_action/exec_action` 去训练 critic。
+
+actor loss 除了 Q 最大化外，还包含：
+
+- residual L2 正则
+- anti-conflict 正则
+
+reward 则由两部分组成：
+
+- `reward_env`：pick-place 任务本身的 dense reward
+- `reward_total`：`reward_env + alignment bonus - conflict penalty - residual norm penalty - smoothness penalty`
+
+#### 3. 评估 residual copilot
+
+```bash
+python eval_residual_td3_teleop.py \
+  --dataset_dir logs/teleop_dataset \
+  --checkpoint logs/residual_td3_teleop.pt
+```
+
+评估会同时输出：
+
+- human-only baseline
+- assisted residual policy
+
+用于对比：
+
+- success rate
+- average return
+- average conflict
 
 ---
 

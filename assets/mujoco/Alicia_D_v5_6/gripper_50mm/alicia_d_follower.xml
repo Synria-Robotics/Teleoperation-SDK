@@ -20,7 +20,7 @@
             meshdir="."/>
 
   <option timestep="0.002" gravity="0 0 -9.81" integrator="implicit"
-          iterations="100" noslip_iterations="20" impratio="10">
+          iterations="150" noslip_iterations="40" impratio="20">
     <flag contact="enable"/>
   </option>
 
@@ -86,68 +86,68 @@
 
       <!-- fixed wastebasket on the right side of the tabletop -->
       <body name="basket" pos="0.03 -0.12 0.05">
-        <geom name="basket_bottom" type="box" pos="0 0 0.0035" size="0.028 0.020 0.0035"
+        <geom name="basket_bottom" type="box" pos="0 0 0.0035" size="0.036 0.028 0.0035"
           rgba="0.18 0.20 0.23 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_left_lower" type="box" pos="0 0.018 0.018" size="0.029 0.003 0.014"
+        <geom name="basket_wall_left_lower" type="box" pos="0 0.026 0.020" size="0.037 0.003 0.016"
           rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_right_lower" type="box" pos="0 -0.018 0.018" size="0.029 0.003 0.014"
+        <geom name="basket_wall_right_lower" type="box" pos="0 -0.026 0.020" size="0.037 0.003 0.016"
           rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_front_lower" type="box" pos="0.025 0 0.018" size="0.003 0.015 0.014"
+        <geom name="basket_wall_front_lower" type="box" pos="0.033 0 0.020" size="0.003 0.023 0.016"
           rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_back_lower" type="box" pos="-0.025 0 0.018" size="0.003 0.015 0.014"
+        <geom name="basket_wall_back_lower" type="box" pos="-0.033 0 0.020" size="0.003 0.023 0.016"
           rgba="0.16 0.18 0.20 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_left_upper" type="box" pos="0 0.0205 0.038" size="0.033 0.003 0.010"
+        <geom name="basket_wall_left_upper" type="box" pos="0 0.0285 0.042" size="0.041 0.003 0.012"
           rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_right_upper" type="box" pos="0 -0.0205 0.038" size="0.033 0.003 0.010"
+        <geom name="basket_wall_right_upper" type="box" pos="0 -0.0285 0.042" size="0.041 0.003 0.012"
           rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_front_upper" type="box" pos="0.029 0 0.038" size="0.003 0.0175 0.010"
+        <geom name="basket_wall_front_upper" type="box" pos="0.037 0 0.042" size="0.003 0.0255 0.012"
           rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
-        <geom name="basket_wall_back_upper" type="box" pos="-0.029 0 0.038" size="0.003 0.0175 0.010"
+        <geom name="basket_wall_back_upper" type="box" pos="-0.037 0 0.042" size="0.003 0.0255 0.012"
           rgba="0.22 0.24 0.27 1" friction="2.0 0.03 0.003"
           solref="0.003 1" solimp="0.97 0.995 0.0005 0.5 2"
           condim="4" contype="5" conaffinity="5"/>
 
         <!-- visual accents only -->
-        <geom name="basket_inner_floor" type="box" pos="0 0 0.0076" size="0.023 0.015 0.0012"
+        <geom name="basket_inner_floor" type="box" pos="0 0 0.0076" size="0.031 0.023 0.0012"
           rgba="0.56 0.60 0.66 1" contype="0" conaffinity="0"/>
-        <geom name="basket_liner" type="box" pos="0 0 0.026" size="0.021 0.013 0.013"
+        <geom name="basket_liner" type="box" pos="0 0 0.028" size="0.029 0.021 0.015"
           rgba="0.72 0.76 0.80 0.16" contype="0" conaffinity="0"/>
-        <geom name="basket_rim_left" type="box" pos="0 0.0208 0.0485" size="0.034 0.0012 0.0015"
+        <geom name="basket_rim_left" type="box" pos="0 0.0288 0.0545" size="0.042 0.0012 0.0015"
           rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
-        <geom name="basket_rim_right" type="box" pos="0 -0.0208 0.0485" size="0.034 0.0012 0.0015"
+        <geom name="basket_rim_right" type="box" pos="0 -0.0288 0.0545" size="0.042 0.0012 0.0015"
           rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
-        <geom name="basket_rim_front" type="box" pos="0.0292 0 0.0485" size="0.0012 0.018 0.0015"
+        <geom name="basket_rim_front" type="box" pos="0.0372 0 0.0545" size="0.0012 0.026 0.0015"
           rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
-        <geom name="basket_rim_back" type="box" pos="-0.0292 0 0.0485" size="0.0012 0.018 0.0015"
+        <geom name="basket_rim_back" type="box" pos="-0.0372 0 0.0545" size="0.0012 0.026 0.0015"
           rgba="0.78 0.80 0.84 1" contype="0" conaffinity="0"/>
       </body>
     </body>
 
-    <!-- ===== graspable red box (20 mm cube) placed on table ===== -->
-    <body name="box" pos="-0.25 0 0.061">
+    <!-- ===== graspable red box (28 mm cube) placed on table ===== -->
+    <body name="box" pos="-0.25 0 0.064">
       <freejoint name="box_free"/>
-      <inertial pos="0 0 0" mass="0.03" diaginertia="2.0e-6 2.0e-6 2.0e-6"/>
-      <geom name="box_geom" type="box" size="0.010 0.010 0.010"
+      <inertial pos="0 0 0" mass="0.08" diaginertia="1.0e-5 1.0e-5 1.0e-5"/>
+      <geom name="box_geom" type="box" size="0.014 0.014 0.014"
             rgba="0.9 0.2 0.2 1"
-            friction="5.0 0.04 0.004"
-            solref="0.003 1" solimp="0.98 0.999 0.0005 0.5 2"
-            condim="4" contype="1" conaffinity="11"/>
+            friction="6.5 0.08 0.006"
+            solref="0.002 1" solimp="0.985 0.9995 0.0002 0.5 2"
+            condim="6" contype="1" conaffinity="11"/>
     </body>
 
     <!-- ===== robot arm (matches upstream Alicia_D_v5_6_gripper_50mm.xml) ===== -->
@@ -211,9 +211,9 @@
                     <!-- gripper shell: collides with ground/table and directly grasps the box -->
                     <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="left_gripper_50mm"
                       contype="4" conaffinity="5"
-                      friction="4.5 0.04 0.004"
-                      solref="0.0025 1" solimp="0.98 0.999 0.0005 0.5 2"
-                         condim="4"/>
+                      friction="7.0 0.10 0.008"
+                      solref="0.0015 1" solimp="0.985 0.9995 0.0002 0.5 2"
+                         condim="6"/>
                   </body>
 
                   <!-- ===== RIGHT GRIPPER ===== -->
@@ -228,9 +228,9 @@
                     <!-- gripper shell: collides with ground/table and directly grasps the box -->
                     <geom type="mesh" group="3" rgba="0.15 0.15 0.15 1" mesh="right_gripper_50mm"
                       contype="4" conaffinity="5"
-                      friction="4.5 0.04 0.004"
-                      solref="0.0025 1" solimp="0.98 0.999 0.0005 0.5 2"
-                         condim="4"/>
+                      friction="7.0 0.10 0.008"
+                      solref="0.0015 1" solimp="0.985 0.9995 0.0002 0.5 2"
+                         condim="6"/>
                   </body>
                   <!-- ===== TOOL0 (end-effector reference) ===== -->
                   <body name="tool0" pos="0 0 -0.13">
@@ -298,8 +298,8 @@
     <position name="pos5" joint="Joint5" kp="300" kv="15"/>
     <position name="pos6" joint="Joint6" kp="300" kv="15"/>
     <!-- gripper fingers (physics-based: contact forces prevent penetration) -->
-    <position name="pos_grip_l" joint="left_finger"   kp="200" kv="10"/>
-    <position name="pos_grip_r" joint="right_finger"   kp="200" kv="10"/>
+    <position name="pos_grip_l" joint="left_finger"   kp="450" kv="30"/>
+    <position name="pos_grip_r" joint="right_finger"   kp="450" kv="30"/>
   </actuator>
 
   <contact>
