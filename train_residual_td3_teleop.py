@@ -217,6 +217,7 @@ class TrainConfig:
     dataset_dirs: tuple[Path, ...]
     save_path: Path
     xml_path: str
+    init_checkpoint: Path | None = None
     seed: int = 0
     alpha: float = 0.2
     gamma: float = 0.99
@@ -249,6 +250,11 @@ class TrainConfig:
     actor_bc_warmup_steps: int = 1000
     normalize_state: bool = True
     normalize_reward: bool = True
+    filter_assist_by_success: bool = False
+    filter_assist_min_cmd_delta: float = 0.0
+    filter_assist_alpha: float | None = None
+    filter_assist_reach_gain: float | None = None
+    filter_assist_place_gain: float | None = None
     log_interval: int = 200
 
 
@@ -353,13 +359,50 @@ def transition_training_reward(transition: Transition, reward_mode: str) -> floa
     raise ValueError(f"Unknown reward mode: {reward_mode}")
 
 
-def load_dataset_into_buffer(dataset_dirs: Sequence[Path], offline_rb: ReplayBuffer) -> list[EpisodeRollout]:
+def rollout_mean_command_delta(rollout: EpisodeRollout) -> float:
+    if not rollout.transitions:
+        return 0.0
+    deltas = [
+        float(np.linalg.norm(np.asarray(t.commanded_action, dtype=np.float32) - np.asarray(t.base_action, dtype=np.float32)))
+        for t in rollout.transitions
+    ]
+    return float(np.mean(deltas)) if deltas else 0.0
+
+
+def rollout_passes_filters(rollout: EpisodeRollout, cfg: TrainConfig) -> tuple[bool, str]:
+    is_assisted_rollout = any(infer_transition_assisted_label(t, rollout) > 0.5 for t in rollout.transitions)
+    if not is_assisted_rollout:
+        return True, ""
+
+    if cfg.filter_assist_by_success and not rollout.success:
+        return False, "assist_not_success"
+
+    if cfg.filter_assist_min_cmd_delta > 0.0:
+        cmd_delta_mean = rollout_mean_command_delta(rollout)
+        if cmd_delta_mean < cfg.filter_assist_min_cmd_delta:
+            return False, f"assist_cmd_delta<{cfg.filter_assist_min_cmd_delta:.4f}"
+
+    meta = rollout.meta
+    if cfg.filter_assist_alpha is not None:
+        if abs(float(meta.get("assist_alpha", -999.0)) - cfg.filter_assist_alpha) > 1e-6:
+            return False, "assist_alpha_mismatch"
+    if cfg.filter_assist_reach_gain is not None:
+        if abs(float(meta.get("heuristic_reach_gain", -999.0)) - cfg.filter_assist_reach_gain) > 1e-6:
+            return False, "assist_reach_mismatch"
+    if cfg.filter_assist_place_gain is not None:
+        if abs(float(meta.get("heuristic_place_gain", -999.0)) - cfg.filter_assist_place_gain) > 1e-6:
+            return False, "assist_place_mismatch"
+    return True, ""
+
+
+def load_dataset_into_buffer(dataset_dirs: Sequence[Path], offline_rb: ReplayBuffer, cfg: TrainConfig) -> list[EpisodeRollout]:
     if not dataset_dirs:
         raise FileNotFoundError("No dataset directories were provided")
 
     playback_episodes: list[EpisodeRollout] = []
     total_explicit_base_target_episodes = 0
     total_transitions = 0
+    skipped_rollouts: dict[str, int] = {}
     for dataset_dir in dataset_dirs:
         if not dataset_dir.exists():
             raise FileNotFoundError(f"Dataset directory does not exist: {dataset_dir}")
@@ -371,6 +414,10 @@ def load_dataset_into_buffer(dataset_dirs: Sequence[Path], offline_rb: ReplayBuf
         dir_transitions = 0
         for path in episode_paths:
             rollout = load_episode_npz(path)
+            keep_rollout, skip_reason = rollout_passes_filters(rollout, cfg)
+            if not keep_rollout:
+                skipped_rollouts[skip_reason] = skipped_rollouts.get(skip_reason, 0) + 1
+                continue
             playback_episodes.append(rollout)
             dir_transitions += len(rollout.transitions)
             with np.load(path, allow_pickle=True) as data:
@@ -402,12 +449,36 @@ def load_dataset_into_buffer(dataset_dirs: Sequence[Path], offline_rb: ReplayBuf
             f" ({explicit_base_target_episodes} with explicit absolute base targets,"
             f" {dir_transitions} transitions)"
         )
+    if skipped_rollouts:
+        print("Skipped rollouts:", ", ".join(f"{key}={value}" for key, value in sorted(skipped_rollouts.items())))
     print(
         f"Loaded {len(playback_episodes)} total episodes from {len(dataset_dirs)} dataset directories"
         f" ({total_explicit_base_target_episodes} with explicit absolute base targets,"
         f" {total_transitions} transitions)"
     )
     return playback_episodes
+
+
+def maybe_load_init_checkpoint(
+    checkpoint_path: Path | None,
+    *,
+    actor: MLPActor,
+    critic: MLPCritic,
+    actor_target: MLPActor,
+    critic_target: MLPCritic,
+) -> None:
+    if checkpoint_path is None:
+        return
+    payload = torch.load(checkpoint_path.resolve(), map_location="cpu", weights_only=False)
+    if "critic_state_dict" in payload:
+        critic.load_state_dict(payload["critic_state_dict"])
+        critic_target.load_state_dict(payload["critic_state_dict"])
+    else:
+        raise KeyError(f"Checkpoint does not contain critic_state_dict: {checkpoint_path}")
+    if "actor_state_dict" in payload:
+        actor.load_state_dict(payload["actor_state_dict"], strict=False)
+        actor_target.load_state_dict(actor.state_dict())
+    print(f"Initialized networks from checkpoint: {checkpoint_path}")
 
 
 def push_records_to_buffer(buffer: ReplayBuffer, rollout) -> None:
@@ -707,6 +778,7 @@ def main(args: argparse.Namespace) -> None:
         dataset_dirs=dataset_dirs,
         save_path=args.save_path.resolve(),
         xml_path=str(args.xml.resolve()),
+        init_checkpoint=args.init_checkpoint.resolve() if args.init_checkpoint is not None else None,
         seed=args.seed,
         alpha=args.alpha,
         reward_mode=args.reward_mode,
@@ -734,6 +806,11 @@ def main(args: argparse.Namespace) -> None:
         actor_bc_warmup_steps=args.actor_bc_warmup_steps,
         normalize_state=not args.disable_state_norm,
         normalize_reward=not args.disable_reward_norm,
+        filter_assist_by_success=args.filter_assist_by_success,
+        filter_assist_min_cmd_delta=args.filter_assist_min_cmd_delta,
+        filter_assist_alpha=args.filter_assist_alpha,
+        filter_assist_reach_gain=args.filter_assist_reach_gain,
+        filter_assist_place_gain=args.filter_assist_place_gain,
         log_interval=args.log_interval,
     )
     set_seed(cfg.seed)
@@ -747,7 +824,7 @@ def main(args: argparse.Namespace) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     offline_rb = ReplayBuffer(cfg.buffer_capacity)
     online_rb = ReplayBuffer(cfg.buffer_capacity)
-    playback_episodes = load_dataset_into_buffer(cfg.dataset_dirs, offline_rb)
+    playback_episodes = load_dataset_into_buffer(cfg.dataset_dirs, offline_rb, cfg)
     state_stats = compute_state_stats(playback_episodes)
     reward_mean, reward_std = compute_reward_stats(playback_episodes, cfg.reward_mode)
     state_normalizer = TensorNormalizer(state_stats.mean, state_stats.std, device) if cfg.normalize_state else None
@@ -776,6 +853,13 @@ def main(args: argparse.Namespace) -> None:
     critic_target = MLPCritic(obs_dim, action_dim, hidden_dim=cfg.hidden_dim).to(device)
     actor_target.load_state_dict(actor.state_dict())
     critic_target.load_state_dict(critic.state_dict())
+    maybe_load_init_checkpoint(
+        cfg.init_checkpoint,
+        actor=actor,
+        critic=critic,
+        actor_target=actor_target,
+        critic_target=critic_target,
+    )
     actor_opt = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr)
     critic_opt = torch.optim.Adam(critic.parameters(), lr=cfg.critic_lr)
 
@@ -1038,6 +1122,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_dirs", type=Path, nargs="+", default=None, help="One or more dataset directories to load jointly")
     parser.add_argument("--xml", type=Path, default=default_xml, help="MuJoCo XML path")
     parser.add_argument("--save_path", type=Path, default=default_save, help="Where to save the checkpoint")
+    parser.add_argument("--init_checkpoint", type=Path, default=None, help="Optional checkpoint used to initialize critic/actor weights")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--alpha", type=float, default=0.2)
     parser.add_argument("--reward_mode", type=str, default="logged_total", choices=("logged_total", "env_dense", "success_only"))
@@ -1071,6 +1156,11 @@ if __name__ == "__main__":
     parser.add_argument("--actor_bc_warmup_steps", type=int, default=1000)
     parser.add_argument("--disable_state_norm", action="store_true", help="Disable state standardization during training and policy rollout")
     parser.add_argument("--disable_reward_norm", action="store_true", help="Disable reward normalization in TD targets")
+    parser.add_argument("--filter_assist_by_success", action="store_true", help="Keep only successful assist rollouts from assisted datasets")
+    parser.add_argument("--filter_assist_min_cmd_delta", type=float, default=0.0, help="Drop assist rollouts whose mean ||commanded-base|| is below this threshold")
+    parser.add_argument("--filter_assist_alpha", type=float, default=None, help="Keep only assist rollouts whose meta assist_alpha matches this value")
+    parser.add_argument("--filter_assist_reach_gain", type=float, default=None, help="Keep only assist rollouts whose meta heuristic_reach_gain matches this value")
+    parser.add_argument("--filter_assist_place_gain", type=float, default=None, help="Keep only assist rollouts whose meta heuristic_place_gain matches this value")
     parser.add_argument("--log_interval", type=int, default=200, help="How often to print aggregated training metrics")
     parsed = parser.parse_args()
     if parsed.dataset_dirs is None and parsed.dataset_dir is None:

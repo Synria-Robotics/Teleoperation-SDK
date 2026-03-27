@@ -17,6 +17,7 @@ from train_residual_td3_teleop import (
     MLPActor,
     ReplayBuffer,
     TensorNormalizer,
+    TrainConfig,
     TorchResidualPolicy,
     ZeroResidualPolicy,
     evaluate_policy,
@@ -44,7 +45,17 @@ def main(args: argparse.Namespace) -> None:
 
     offline_rb = ReplayBuffer(1)
     dataset_dirs = _resolve_dataset_dirs(args.dataset_dir, args.dataset_dirs)
-    playback_episodes = load_dataset_into_buffer(dataset_dirs, offline_rb)
+    eval_cfg = TrainConfig(
+        dataset_dirs=dataset_dirs,
+        save_path=Path("/tmp/eval_unused.pt"),
+        xml_path=str(args.xml.resolve()),
+        filter_assist_by_success=args.filter_assist_by_success,
+        filter_assist_min_cmd_delta=args.filter_assist_min_cmd_delta,
+        filter_assist_alpha=args.filter_assist_alpha,
+        filter_assist_reach_gain=args.filter_assist_reach_gain,
+        filter_assist_place_gain=args.filter_assist_place_gain,
+    )
+    playback_episodes = load_dataset_into_buffer(dataset_dirs, offline_rb, eval_cfg)
 
     checkpoint = torch.load(args.checkpoint.resolve(), map_location=device, weights_only=False)
     cfg = checkpoint.get("config", {})
@@ -93,4 +104,9 @@ if __name__ == "__main__":
     parser.add_argument("--alpha", type=float, default=0.2)
     parser.add_argument("--eval_episodes", type=int, default=0, help="How many playback episodes to evaluate; <=0 means all")
     parser.add_argument("--residual_limit", type=float, default=0.35)
+    parser.add_argument("--filter_assist_by_success", action="store_true")
+    parser.add_argument("--filter_assist_min_cmd_delta", type=float, default=0.0)
+    parser.add_argument("--filter_assist_alpha", type=float, default=None)
+    parser.add_argument("--filter_assist_reach_gain", type=float, default=None)
+    parser.add_argument("--filter_assist_place_gain", type=float, default=None)
     main(parser.parse_args())
