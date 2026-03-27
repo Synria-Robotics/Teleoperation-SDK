@@ -8,11 +8,32 @@ version = "0.1.0"
 description = "Alicia-D 遥操作示例：实时关节绘图与 MuJoCo Follower 仿真"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    {name = "Synria Robotics Team", email = "dev@synriarobotics.ai"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "alicia-d-sdk",
     "mujoco>=3.5.0",
 ]
 
+[project.urls]
+Homepage = "https://synriarobotics.ai"
+Repository = "https://github.com/Synria-Robotics/Teleoperation-SDK"
+Documentation = "https://docs.sparklingrobo.com"
+
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["utils*"]
+include = ["teleop_utils*"]

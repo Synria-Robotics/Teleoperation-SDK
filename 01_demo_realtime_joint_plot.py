@@ -22,7 +22,7 @@
 Demo: Realtime Leader arm monitoring with joint plots and input status panel.
 
 Standalone version for Teleoperation-SDK.
-Requires: alicia_d_sdk (pip install -e /home/ubuntu22/Alicia-D-SDK), matplotlib
+Requires: alicia_d_sdk, matplotlib
 """
 
 import math
@@ -30,13 +30,6 @@ import time
 import argparse
 import threading
 from collections import deque
-from pathlib import Path
-import sys
-
-# ── Make alicia_d_sdk importable (fallback if not pip-installed) ──
-_SDK_PATH = str(Path("/home/ubuntu22/Alicia-D-SDK"))
-if _SDK_PATH not in sys.path:
-    sys.path.insert(0, _SDK_PATH)
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -60,7 +53,7 @@ CLR_RED    = '#FF3A5C'   # alert red
 JOINT_COLORS = [CLR_CYAN] * 6
 
 import alicia_d_sdk
-from utils import precise_sleep
+from teleop_utils import precise_sleep
 
 
 def _try_disable_torque(robot):

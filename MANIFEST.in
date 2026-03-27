@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+include 01_demo_realtime_joint_plot.py
+include 02_demo_mujoco_follower.py
+recursive-include assets *.xml *.STL

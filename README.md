@@ -24,10 +24,11 @@ Teleoperation-SDK/
 │               ├── link1.STL ~ link6.STL
 │               ├── left_gripper_50mm.STL
 │               └── right_gripper_50mm.STL
-├── utils/
+├── teleop_utils/
 │   ├── __init__.py
 │   └── fps_utils.py                     # precise_sleep 高精度定时
 ├── pyproject.toml
+├── LICENSE
 ├── .gitignore
 └── README.md
 ```
@@ -53,23 +54,35 @@ Teleoperation-SDK/
 
 请按官方文档完成安装与验证：[Conda 环境管理 | Synria Robotics 文档中心](https://docs.sparklingrobo.com/info/development/conda-installation)。安装完成后 **重启终端**（或按文档配置 PATH），确保 `conda --version` 可用。
 
-### 2.2 创建并激活 Python 环境
+### 2.2 安装步骤
+
+获取代码和相应 examples 例程：
 
 ```bash
+git clone https://github.com/Synria-Robotics/Teleoperation-SDK.git
+cd Teleoperation-SDK
+
+# 2. 创建 Python 环境（推荐使用 Conda）
 conda create -n teleop python=3.11 -y
 conda activate teleop
 ```
 
-> 后续所有命令均在 `teleop` 环境中执行。
+#### 方法一：从源码安装（开发模式）
 
-### 2.3 安装依赖
+如果您需要修改源码或参与开发：
 
 ```bash
-cd /path/to/Teleoperation-SDK
-pip install .
+cd Teleoperation-SDK
+pip install -e .
 ```
 
-### 2.4 验证安装
+#### 方法二：从 PyPI 安装
+
+```bash
+pip install teleoperation-sdk
+```
+
+### 2.3 验证安装
 
 ```bash
 python -c "
@@ -87,7 +100,7 @@ print('All dependencies installed successfully!')
 
 所有行均无报错即配置完成。
 
-### 2.5 串口权限（首次需要）
+### 2.4 串口权限（首次需要）
 
 ```bash
 sudo usermod -aG dialout $USER
@@ -179,7 +192,7 @@ python 02_demo_mujoco_follower.py --xml /path/to/custom_model.xml
 | `ModuleNotFoundError: No module named 'torch'` | 同上 | 同上 |
 | `ModuleNotFoundError: No module named 'mujoco'` | 未安装 mujoco | 同上 |
 | `ModuleNotFoundError: No module named 'alicia_d_sdk'` | SDK 未安装 | 同上 |
-| `Permission denied: '/dev/ttyACM0'` | 串口权限不足 | 见 [2.5 串口权限](#25-串口权限首次需要) |
+| `Permission denied: '/dev/ttyACM0'` | 串口权限不足 | 见 [2.4 串口权限](#24-串口权限首次需要) |
 | `device disconnected or multiple access on port` | 机械臂未连接 / 串口被占用 | 检查 USB 连接，确认无其他程序占用串口 |
 
 ### 其他问题
