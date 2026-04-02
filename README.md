@@ -182,7 +182,7 @@ python 02_demo_mujoco_follower.py --xml /path/to/custom_model.xml
 这部分不是用 BC policy 当 base，而是围绕 `human teleop + residual copilot` 设计：
 
 ```text
-commanded_action = base_action + alpha * residual_action
+commanded_action = clip(base_action + residual_action)
 ```
 
 环境是仓库内新增的 `teleop_sdk.envs.MujocoPickPlaceTeleopEnv`，第一版任务为单臂 pick-place，状态里显式包含：
@@ -196,8 +196,7 @@ commanded_action = base_action + alpha * residual_action
 - `observation.state` / `observation_state`：低维状态向量
 - `base_action`：唯一的基础动作语义。对 teleop 来说，它就是人类当前输入，不再单独并列保留一个 `human_action`
 - `residual_action`：copilot 输出
-- `commanded_action`：`base_action + alpha * residual_action`
-- `realized_action`：控制器和仿真真正执行出来的动作，用于分析 tracking gap
+- `realized_action`：控制器和仿真真正执行出来的动作
 
 #### 1. 采集纯 teleop 数据
 
@@ -208,16 +207,16 @@ python record_teleop.py --output_dir logs/teleop_dataset
 每个 episode 会保存成一个 `episode_XXXX.npz`，字段包括：
 
 - `observation_state`
+- `next_observation_state`
 - `base_action`
 - `next_base_action`
 - `residual_action`
-- `commanded_action`
 - `realized_action`
 - `reward_env`
-- `reward_total`
-- `conflict_score`
-
-兼容旧 reader 时，文件里仍会额外保存 `obs_flat / human_action / exec_action` 这些 legacy alias，但训练和后续扩展都应以新字段为准。
+- `terminated`
+- `truncated`
+- `base_joint_target`
+- `base_gripper_target`
 
 #### 2. 训练 residual TD3
 
@@ -229,22 +228,21 @@ python train_residual_td3_teleop.py \
 
 训练流程固定为：
 
-1. 用 offline teleop dataset 预热 critic
-2. 收集 human-only baseline episodes（`delta = 0`）
-3. 用 playback 的 teleop action 在 MuJoCo 中收集 assisted rollout
-4. 混合 offline + online buffer 做 off-policy residual TD3 更新
+1. 构建 offline replay
+2. 用 exploration residual 把 online replay 填到 `learning_starts`
+3. 做 `critic_warmup_steps` 次 critic-only update
+4. 进入 rollout + mixed replay update
 
-目前实现里，critic 当前步和 target 步都已经对齐到 `commanded_action` 语义，这一点和 ResFiT 的核心约束一致，不能再混用 `realized_action/exec_action` 去训练 critic。
+当前实现按设计文档使用 differential critic：
 
-actor loss 除了 Q 最大化外，还包含：
+- `Q_ast(x_t, a_t^{assist})`
+- `Q_bas(x_t, b_t)`
 
-- residual L2 正则
-- anti-conflict 正则
+actor 目标是最大化 `Q_ast - Q_bas`，不再包含额外正则项。
 
-reward 则由两部分组成：
+reward 只保留环境任务回报：
 
-- `reward_env`：pick-place 任务本身的 dense reward
-- `reward_total`：`reward_env + alignment bonus - conflict penalty - residual norm penalty - smoothness penalty`
+- `reward_env`
 
 #### 3. 评估 residual copilot
 
@@ -263,7 +261,6 @@ python eval_residual_td3_teleop.py \
 
 - success rate
 - average return
-- average conflict
 
 ---
 
